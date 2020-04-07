@@ -55,6 +55,16 @@ public class FastBuyServiceImpl {
     }
 
     /**
+     * redis 的 watch原理：
+     * 当watch监听某个key的时候，redis DB结构在内部维护了一个dict字典，其key为客户端watch的key，value为链表，每个链表节点都是监听了这个key的client
+     * 每个client结构有一个flag属性表明了该client的状态
+     * 当服务端收到了写命令，会去判断该写命令修改的key是否在dict字典中，若有则将该key对应的链表中每个client的flag置为dirty
+     * 当服务端收到了client的exec命令时，会去查看该client的flag属性，如果是dirty则证明该client watch的key被修改过
+     * 则此时将队列中的命令抛弃，否则执行队列中的所有命令
+     * （在multi开启事物之后，client发起的命令都会缓存在该client结构的一个队列中）
+     */
+
+    /**
      * @param jedis
      * @param amoutId       redis中的存本次活动商品总量的KEY
      * @param ordersId      redis中存本次活动商品抢购成功的用户信息队列的KEY
